@@ -20,5 +20,5 @@ pasos para ejecutar el proyecto localmente:
 
 1. **Clonar el repositorio:**
    ```bash
-   git clone [https://github.com/JDaniel0323/PruebaMAB.git](https://github.com/JDaniel0323/PruebaMAB.git)
+   git clone [https://github.com/JDaniel0323/PruebaMAB.git]
    ```
