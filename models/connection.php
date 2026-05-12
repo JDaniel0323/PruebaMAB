@@ -5,52 +5,66 @@ class connection{
 
     private $conn;
 
-    public function __construct(){
-        $this->conn = new mysqli("localhost", "root", "", "MAB", 3307);
+    public function __construct()
+    {
+        $this->conn = new mysqli("localhost", "root", "", "mab", 3306);
     }
-    public function getProducts(){
-        $query = $this->conn->query("SELECT id, nombre, precio, stock from PRODUCTOS");
 
+    public function getLogin($nombre, $pass)
+    {
+        $query = $this->conn->prepare("SELECT id, username, password_hash FROM usuarios WHERE username = ?");
+            $query->bind_param("s", $nombre);
+
+            $query->execute();
+
+            $result = $query->get_result();
+        return $result;
+    }
+
+    public function getUniversity($pais)
+    {
+        $url = "http://universities.hipolabs.com/search?country=" . urlencode($pais);
+        $response = file_get_contents($url);
+        $data = json_decode($response, true);
         $return = [];
 
         $i = 0;
-        while($row = $query->fetch_assoc()){
-            $return[$i] = $row;
+        $j = 0;
+        while($j < count($data))
+        {
+            $return[$i] = $data[$j];
             $i++;
+            $j++;
         }
-
         return $return;
     }
-
-    public function getProductsID($id){
-        $query = $this->conn->query("SELECT id,  nombre, precio, stock from PRODUCTOS WHERE id = $id");
-
-        $return = [];
-
-        $i = 0;
-        while($row = $query->fetch_assoc()){
-            $return[$i] = $row;
-            $i++;
-        }
-
-        return $return;
+    public function saveUniversity($userId, $pais, $ruta) 
+    {
+        $query = $this->conn->prepare(
+            "INSERT INTO descargas_pdf (user_id, pais, ruta_archivo, fecha) 
+            VALUES (?, ?, ?, NOW())"
+        );
+        $query->bind_param("iss", $userId, $pais, $ruta);
+        return $query->execute();
     }
 
-    public function insertProduct($nombre, $precio, $stock){
-        $query = $this->conn->query("INSERT INTO PRODUCTOS (nombre, precio, stock) VALUES ('$nombre', $precio, $stock)");
-        return $query;
+    public function getHistory($userId)
+    {
+        $query = $this->conn->prepare("SELECT pais, ruta_archivo, fecha FROM descargas_pdf WHERE user_id = ? ORDER BY fecha DESC");
+        $query->bind_param("i", $userId);
+        $query->execute();
+        return $query->get_result();
     }
 
-    public function updateProduct($id, $nombre, $precio, $stock){
-        $query = $this->conn->query("UPDATE PRODUCTOS SET nombre='$nombre', precio=$precio, stock=$stock WHERE id=$id");
-        return $query;
+    public function registerUser($username, $password) 
+    {
+        $passHash = password_hash($password, PASSWORD_BCRYPT);
+        
+        $query = $this->conn->prepare("INSERT INTO usuarios (username, password_hash) VALUES (?, ?)");
+        $query->bind_param("ss", $username, $passHash);
+        
+        return $query->execute();
     }
-    
-    public function deleteProduct($id){
-        $query = $this->conn->query("DELETE FROM PRODUCTOS WHERE id=$id");
-        return $query;
-    }
-
 }
 
 
